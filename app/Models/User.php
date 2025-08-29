@@ -38,6 +38,14 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Feedback::class);
     }
 
+    /**
+     * Get the feedback assigned to this user
+     */
+    public function assignedFeedback(): HasMany
+    {
+        return $this->hasMany(\App\Models\Feedback::class, 'assignee_id');
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(\App\Models\Comment::class);

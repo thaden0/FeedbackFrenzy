@@ -14,6 +14,8 @@ class FeedbackFactory extends Factory
             'title' => fake()->sentence(3, 6),
             'category' => fake()->randomElement(['feature', 'bug', 'improvement', 'other']),
             'description' => fake()->paragraphs(2, true),
+            'status' => 'new',
+            'assignee_id' => null,
         ];
     }
 
@@ -35,6 +37,36 @@ class FeedbackFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'category' => 'improvement',
+        ]);
+    }
+
+    /**
+     * Set the feedback status to in progress
+     */
+    public function inProgress(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'in_progress',
+        ]);
+    }
+
+    /**
+     * Set the feedback status to completed
+     */
+    public function completed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'completed',
+        ]);
+    }
+
+    /**
+     * Set the feedback status to rejected
+     */
+    public function rejected(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'rejected',
         ]);
     }
 } 

@@ -14,9 +14,11 @@ class UpdateFeedbackRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'category' => 'required|in:feature,bug,improvement,other',
-            'description' => 'required|string',
+            'title'        => 'sometimes|string|max:255',
+            'category'     => 'sometimes|in:feature,bug,improvement,other',
+            'description'  => 'sometimes|string',
+            'status'       => 'sometimes|in:new,in_progress,done,cancelled',
+            'assignee_id'  => 'sometimes|nullable|exists:users,id',
         ];
     }
 }

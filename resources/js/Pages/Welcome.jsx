@@ -19,7 +19,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 <img
                     id="background"
                     className="absolute -left-20 top-0 max-w-[877px]"
-                    src="https://laravel.com/assets/img/welcome/background.svg"
+                    src="/images/background.svg"
                 />
                 <div className="relative flex min-h-screen flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
                     <div className="relative w-full max-w-2xl px-6 lg:max-w-7xl">
@@ -77,7 +77,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                             Safe and Secure
                                         </h2>
 
-                                        <p className="mt-4 text-sm/relaxed">
+                                        <p className="my-5 text-sm/relaxed">
                                             At <span className="font-semibold">Feedback Frenzy</span>, your data is kept
                                             <span className="text-purple-600 font-semibold"> safe and secure</span>.  
                                             We use modern encryption, protected authentication with Laravel Sanctum, and
@@ -85,10 +85,15 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                             trusted.
                                         </p>
 
-
-
                                     </div>
                                 </div>
+                            </div>                            
+
+                            <div className="container mx-auto mb-5 mt-[200px]">
+                                <p className="m-5 text-center text-sm/relaxed">
+                                    Give your clients a simple way to share feedback and suggestions while keeping your team in the loop at every step. With built-in notifications, employees can respond quickly, track progress, and ensure that no idea or concern gets overlooked. This creates a direct channel between customers and staff, helping you improve your product or service while strengthening trust and engagement.
+                                </p>
+                                <img className="mt-[100px]" src="/images/screenshot.png" alt="Screen Shot" />
                             </div>
                         </main>
 

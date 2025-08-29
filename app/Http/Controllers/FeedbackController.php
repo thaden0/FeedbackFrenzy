@@ -34,17 +34,15 @@ class FeedbackController extends Controller
 
     public function show(Feedback $feedback): JsonResponse
     {
-        if ($feedback->user_id !== auth()->id()) abort(403);
-        return response()->json($feedback->load('user'), 200);
+        return response()->json($feedback->load(['user','assignee']), 200);
     }
     
     public function update(UpdateFeedbackRequest $request, Feedback $feedback): JsonResponse
     {
-        if ($feedback->user_id !== auth()->id()) abort(403);
         $feedback->update($request->validated());
-        return response()->json($feedback->load('user'), 200);
+        return response()->json($feedback->load(['user','assignee']), 200);
     }
-    
+        
     public function destroy(Feedback $feedback): JsonResponse
     {
         if ($feedback->user_id !== auth()->id()) abort(403);
