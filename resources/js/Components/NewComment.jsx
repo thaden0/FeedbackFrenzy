@@ -1,19 +1,49 @@
+// resources/js/Components/NewComment.jsx
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const MENTION_RX = /(^|\s)@([A-Za-z0-9._-]{0,50})$/;
 
+const modules = {
+  toolbar: [
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link", "blockquote", "code-block"],
+    [{ header: [1, 2, 3, false] }],
+    [{ align: [] }],
+    ["clean"],
+  ],
+};
+
+const formats = [
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list",
+  "bullet",
+  "link",
+  "blockquote",
+  "code-block",
+  "header",
+  "align",
+];
+
 export default function NewComment({ feedbackId, onCreated }) {
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState("<p></p>"); // HTML
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState({});
   const [ready, setReady] = useState(false);
 
+  // mention state
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [opts, setOpts] = useState([]);
   const [hi, setHi] = useState(0);
-  const taRef = useRef(null);
+
+  const quillRef = useRef(null);
   const fetchT = useRef(null);
 
   const http = axios.create({
@@ -22,14 +52,45 @@ export default function NewComment({ feedbackId, onCreated }) {
     headers: { "X-Requested-With": "XMLHttpRequest", Accept: "application/json" },
   });
 
-  useEffect(() => { (async () => { try { await http.get("/sanctum/csrf-cookie"); } finally { setReady(true); } })(); }, []);
+  useEffect(() => {
+    (async () => {
+      try { await http.get("/sanctum/csrf-cookie"); } finally { setReady(true); }
+    })();
+  }, []);
 
-  function onChange(e) {
-    const v = e.target.value;
-    setComment(v);
+  // global key handler for the suggestion list
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (!open || opts.length === 0) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); setHi((v) => (v + 1) % opts.length); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setHi((v) => (v - 1 + opts.length) % opts.length); }
+      else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); insertMention(opts[hi]); }
+      else if (e.key === "Escape") { setOpen(false); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, opts, hi]);
 
-    const caret = e.target.selectionStart;
-    const before = v.slice(0, caret);
+  function scheduleFetch(q) {
+    clearTimeout(fetchT.current);
+    fetchT.current = setTimeout(async () => {
+      try {
+        const params = q ? { q } : undefined;
+        const { data } = await http.get("/users", { params });
+        setOpts(data);
+        setHi(0);
+      } catch {}
+    }, 150);
+  }
+
+  // ReactQuill change handler
+  function onQuillChange(value, _delta, _source, editor) {
+    setComment(value);
+    // caret and plain text before caret
+    const range = editor.getSelection();
+    if (!range) { setOpen(false); return; }
+    const before = editor.getText(0, range.index); // plain text up to caret
     const m = before.match(MENTION_RX);
     if (m) {
       const q = m[2] ?? "";
@@ -44,63 +105,51 @@ export default function NewComment({ feedbackId, onCreated }) {
     }
   }
 
-  function scheduleFetch(q) {
-    clearTimeout(fetchT.current);
-    fetchT.current = setTimeout(async () => {
-      try {
-        const params = q ? { q } : undefined;
-        const { data } = await http.get("/users", { params });        setOpts(data);
-        setHi(0);
-      } catch { /* ignore */ }
-    }, 150);
-  }
-
   function insertMention(user) {
-    const ta = taRef.current;
-    if (!ta) return;
-    const caret = ta.selectionStart;
-    const before = comment.slice(0, caret);
-    const after = comment.slice(caret);
+    clearTimeout(fetchT.current);
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+
+    const range = quill.getSelection(true);
+    if (!range) return;
+    const before = quill.getText(0, range.index);
     const m = before.match(MENTION_RX);
     if (!m) return;
 
-    const prefix = before.slice(0, before.length - (m[2]?.length ?? 0) - 1);
     const handle = user?.username;
     if (!handle) return;
-    const newText = `${prefix}@${handle} ${after}`;
-    const newCaret = (prefix + "@" + handle + " ").length;
 
-    setComment(newText);
+    // start index of "@{query}"
+    const start = range.index - (m[2]?.length ?? 0) - 1;
+    const replace = `@${handle} `;
+
+    quill.deleteText(start, range.index - start, "user");
+    quill.insertText(start, replace, "user");
+    quill.setSelection(start + replace.length, 0, "user");
+
     setOpen(false);
     setOpts([]);
     setQuery("");
     setHi(0);
-
-    requestAnimationFrame(() => {
-      ta.focus();
-      ta.setSelectionRange(newCaret, newCaret);
-    });
-  }
-
-  function onKeyDown(e) {
-    if (!open || opts.length === 0) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); setHi((hi + 1) % opts.length); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setHi((hi - 1 + opts.length) % opts.length); }
-    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); insertMention(opts[hi]); }
-    else if (e.key === "Escape") { setOpen(false); }
   }
 
   async function submit(e) {
     e.preventDefault();
     if (!feedbackId || !ready) return;
-    const body = comment.trim();
-    if (!body) return;
+
+    const quill = quillRef.current?.getEditor();
+    const plain = quill?.getText().trim() ?? "";
+    if (!plain) return; // ignore empty editor
 
     setBusy(true); setErrors({});
     try {
-      const { data } = await http.post("/comments", { feedback_id: feedbackId, comment: body });
-      setComment("");
+      const { data } = await http.post("/comments", {
+        feedback_id: feedbackId,
+        comment, // HTML from react-quill
+      });
+      setComment("<p></p>");
       onCreated?.(data);
+      setOpen(false); setOpts([]); setQuery(""); setHi(0);
     } catch (err) {
       if (err.response?.status === 422) setErrors(err.response.data.errors || {});
       else console.error(err);
@@ -112,18 +161,16 @@ export default function NewComment({ feedbackId, onCreated }) {
   return (
     <form onSubmit={submit} className="space-y-2">
       <div className="relative">
-        <textarea
-          ref={taRef}
-          rows={3}
-          className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
-            errors.comment ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
-          }`}
+        <ReactQuill
+          ref={quillRef}
+          theme="snow"
           value={comment}
-          onChange={onChange}
-          onKeyDown={onKeyDown}
+          onChange={onQuillChange}
+          modules={modules}
+          formats={formats}
           placeholder="Write a comment… Use @ to mention"
-          required
         />
+
         {open && opts.length > 0 && (
           <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-60 overflow-auto rounded-md border bg-white shadow">
             {opts.map((u, idx) => (
