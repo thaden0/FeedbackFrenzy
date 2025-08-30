@@ -9,64 +9,26 @@ class FeedbackFactory extends Factory
 {
     public function definition(): array
     {
+        $categories = ['feature','bug','improvement','ui','performance','security','docs','other'];
+        $statuses   = ['new','triage','in_progress','review','blocked','completed','rejected'];
+
         return [
-            'user_id' => User::factory(),
-            'title' => fake()->sentence(3, 6),
-            'category' => fake()->randomElement(['feature', 'bug', 'improvement', 'other']),
-            'description' => fake()->paragraphs(2, true),
-            'status' => 'new',
-            'assignee_id' => null,
+            'user_id'     => User::inRandomOrder()->value('id') ?? User::factory(),
+            'title'       => ucfirst(fake()->words(rand(3,7), true)),
+            'category'    => fake()->randomElement($categories),
+            'description' => fake()->paragraphs(rand(1,3), true),
+            'status'      => fake()->randomElement($statuses),
+            'assignee_id' => User::inRandomOrder()->value('id') ?? User::factory(),
+            'created_at'  => fake()->dateTimeBetween('-90 days', 'now'),
+            'updated_at'  => now(),
         ];
     }
 
-    public function feature(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'category' => 'feature',
-        ]);
-    }
+    public function feature(): static     { return $this->state(fn () => ['category' => 'feature']); }
+    public function bug(): static         { return $this->state(fn () => ['category' => 'bug']); }
+    public function improvement(): static { return $this->state(fn () => ['category' => 'improvement']); }
 
-    public function bug(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'category' => 'bug',
-        ]);
-    }
-
-    public function improvement(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'category' => 'improvement',
-        ]);
-    }
-
-    /**
-     * Set the feedback status to in progress
-     */
-    public function inProgress(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'in_progress',
-        ]);
-    }
-
-    /**
-     * Set the feedback status to completed
-     */
-    public function completed(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'completed',
-        ]);
-    }
-
-    /**
-     * Set the feedback status to rejected
-     */
-    public function rejected(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => 'rejected',
-        ]);
-    }
-} 
+    public function inProgress(): static { return $this->state(fn () => ['status' => 'in_progress']); }
+    public function completed(): static  { return $this->state(fn () => ['status' => 'completed']); }
+    public function rejected(): static   { return $this->state(fn () => ['status' => 'rejected']); }
+}

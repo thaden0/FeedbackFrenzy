@@ -1,7 +1,6 @@
 import DOMPurify from "dompurify";
 
 export default function Comment({ c }) {
-  // sanitize with limited allowed tags
   const clean = DOMPurify.sanitize(c.comment, {
     ALLOWED_TAGS: [
       "b", "i", "em", "strong", "u",
@@ -9,7 +8,7 @@ export default function Comment({ c }) {
       "ul", "ol", "li",
       "blockquote", "code", "pre"
     ],
-    ALLOWED_ATTR: ["style"] // optional, remove if you want stricter
+    ALLOWED_ATTR: ["style"]
   });
 
   return (
