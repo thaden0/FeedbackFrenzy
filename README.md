@@ -1,4 +1,4 @@
-#Feedback Frenzy
+# Feedback Frenzy
 A Laravel 12 backend with a React SPA front end powered by Vite (Laravel Breeze React).
 
 ![screen shot](https://github.com/thaden0/FeedbackFrenzy/blob/main/public/images/screenshot.png)
