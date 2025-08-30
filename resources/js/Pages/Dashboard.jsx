@@ -34,7 +34,7 @@ export default function Dashboard() {
             <div className="p-6 text-gray-900">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <aside className="space-y-4">
-                  <Accordion className="mb-3" title="Submit Feedback">
+                  <Accordion className="mb-3" title="Submit Feedback" defaultOpen>
                     <FeedbackForm onCreated={() => setRefresh(n => n + 1)} />
                   </Accordion>
                   <Accordion title="All Feedback" defaultOpen>
